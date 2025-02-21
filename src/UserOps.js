@@ -1,4 +1,4 @@
-import redis from '../redisClient.js';
+import redis from './redisClient.js';
 import { putObjectURL, deleteObjectURL } from './index.js';
 import { v4 as uuidv4 } from 'uuid';
 
