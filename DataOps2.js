@@ -30,12 +30,11 @@ const createUser = async (req, res) => {
         len++;
         let userKey = `user${len}`;
         try {
-            // Check if the key already exists
             const existingType = await redis.json.type('Users', `$.${userKey}`);
 
             if (existingType) {
-                len += 10; // Increase ID to avoid collision
-                userKey = `user${len}`;
+                len=len+11
+                userKey = `user${len+11}`;
             }
         } catch (error) {
             console.log('Key does not exist');
@@ -150,7 +149,9 @@ const getUrl = async (req, res) => {
 
         if (result) {
             console.log('User data updated');
-            return res.status(201).send({ message: 'Url for uploading image', Url: url });
+            return res
+                .status(201)
+                .send({ message: 'Url for uploading image', Url: url });
         } else {
             console.log("Data can't be updated");
             return res.status(404).send({ error: 'Data Not Found' });
