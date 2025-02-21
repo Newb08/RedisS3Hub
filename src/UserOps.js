@@ -1,46 +1,13 @@
-import redis from './redisClient.js';
-import { putObjectURL } from './index.js';
-
-// const decreaseIndex = async () => {
-//     try {
-//         const users = await redis.json.get('Users', '$');
-//         const usersObj = users[0];
-//         if (!usersObj || Object.keys(usersObj).length === 0) {
-//             console.log('All users are deleted');
-//             return;
-//         }
-
-//         const data = Object.entries(usersObj);
-//         const newData = {};
-
-//         data.forEach(([user, data], ind) => {
-//             newData[user] = { id: ind + 1, ...data };
-//         });
-//         await redis.json.set('Users', '$', newData);
-//         console.log(`Ids updated!!`);
-//     } catch (error) {
-//         console.log('Error in changing indices', error);
-//     }
-// };
+import redis from '../redisClient.js';
+import { putObjectURL, deleteObjectURL } from './index.js';
+import { v4 as uuidv4 } from 'uuid';
 
 const createUser = async (req, res) => {
     try {
         const data = req.body;
-        let len = Number(await redis.json.objLen('Users', '$')) || 0; //objectlenght
-        len++;
-        let userKey = `user${len}`;
-        try {
-            const existingType = await redis.json.type('Users', `$.${userKey}`);
-
-            if (existingType) {
-                len=len+11
-                userKey = `user${len+11}`;
-            }
-        } catch (error) {
-            console.log('Key does not exist');
-        }
+        const userKey = uuidv4().replaceAll('-', '');
         const result = await redis.json.set('Users', `$.${userKey}`, {
-            id: len,
+            id: userKey,
             ...data,
         });
 
@@ -60,7 +27,7 @@ const createUser = async (req, res) => {
 
 const readUsers = async (req, res) => {
     try {
-        const result = await redis.json.get('Users', '$.*');
+        const result = await redis.json.get('Users', { path: `$.*` });
 
         if (result && Object.keys(result).length > 0) {
             console.log('User data retrieved');
@@ -77,8 +44,7 @@ const readUsers = async (req, res) => {
 
 const readUsersById = async (req, res) => {
     try {
-        const userId = parseInt(req.params.id);
-        const userKey = `user${userId}`;
+        const { userKey } = req.params;
         const result = await redis.json.get('Users', { path: `.${userKey}` });
         console.log(result);
         if (result) {
@@ -97,8 +63,7 @@ const readUsersById = async (req, res) => {
 const updateUser = async (req, res) => {
     try {
         const data = req.body;
-        const userId = parseInt(req.params.id);
-        const userKey = `user${userId}`;
+        const { userKey } = req.params;
         const result = await redis.json.merge('Users', `$.${userKey}`, data);
         if (result) {
             console.log('User data updated');
@@ -115,15 +80,14 @@ const updateUser = async (req, res) => {
 
 const deleteUser = async (req, res) => {
     try {
-        const userId = parseInt(req.params.id);
-        const userKey = `user${userId}`;
+        const { userKey } = req.params;
+        const res1 = await deleteObjectURL(userKey)
         const result = await redis.json.del('Users', `$.${userKey}`);
         if (result) {
             console.log('User data deleted');
-            // decreaseIndex();
             return res
                 .status(200)
-                .json({ message: 'User deleted', deletedUser: result });
+                .json({ message: 'User deleted' });
         } else {
             console.log('Data not found');
             return res.status(404).send('Data Not Found');
@@ -136,13 +100,9 @@ const deleteUser = async (req, res) => {
 
 const getUrl = async (req, res) => {
     try {
-        const userId = parseInt(req.params.id);
-        const userKey = `user${userId}`;
-
+        const { userKey } = req.params;
         const url = await putObjectURL(`${userKey}.jpg`, 'image/jpg');
-
         const img = url.split('.jpg')[0] + '.jpg';
-
         const result = await redis.json.merge('Users', `$.${userKey}`, {
             imageUrl: img,
         });

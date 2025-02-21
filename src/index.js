@@ -1,4 +1,9 @@
-import { S3Client, GetObjectCommand, PutObjectCommand} from '@aws-sdk/client-s3';
+import {
+    S3Client,
+    GetObjectCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import dotenv from 'dotenv';
 
@@ -21,14 +26,27 @@ const s3Client = new S3Client({
 //     return url;
 // };
 
+export const deleteObjectURL = async (userKey) => {
+    try {
+        const command = new DeleteObjectCommand({
+            Bucket: 'mehul-private-bucket',
+            Key: `uploads/${userKey}.jpg`,
+        });
+        await s3Client.send(command);
+        console.log(`Image deleted from S3`);
+        return true;
+    } catch (error) {
+        console.error(`Error deleting image ${userKey}.jpg from S3`, error);
+        return false;
+    }
+};
+
 export const putObjectURL = async (filename, contentType) => {
     const command = new PutObjectCommand({
         Bucket: 'mehul-private-bucket',
         Key: `uploads/${filename}`,
-        ContentType: contentType 
+        ContentType: contentType,
     });
-    const url = await getSignedUrl(s3Client, command);
+    const url = await getSignedUrl(s3Client, command, { expiresIn: 120 });
     return url;
 };
-
-
