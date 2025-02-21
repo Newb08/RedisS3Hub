@@ -128,3 +128,11 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+.prettierrc
+.vscode/
+del.js
+getAllKeys.js
+img/
+retrieve.js
+store.js
