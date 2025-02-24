@@ -5,10 +5,12 @@ import { v4 as uuidv4 } from 'uuid';
 const createUser = async (req, res) => {
     try {
         const data = req.body;
+        const img = `https://mehul-private-bucket.s3.ap-south-1.amazonaws.com/uploads/profile+Pic.webp`;
         const userKey = uuidv4().replaceAll('-', '');
         const result = await redis.json.set('Users', `$.${userKey}`, {
             id: userKey,
             ...data,
+            imageUrl: img
         });
 
         console.log(`User added with key: ${userKey}`);
